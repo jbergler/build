@@ -344,6 +344,18 @@ create_armbian()
 	if [[ $1 == *spi* ]]; then
 		sed -e 's,rootdev=.*,rootdev='"$satauuid"',g' -i "${TempDir}"/rootfs/boot/armbianEnv.txt
 		echo "$satauuid	/		$FilesystemChoosen	${mountopts[$FilesystemChoosen]}" >> "${TempDir}"/rootfs/etc/fstab
+
+		if [[ $(type -t write_uboot_platform_mtd) == function ]]; then
+			dialog --title "$title" --backtitle "$backtitle" --yesno \
+				"Do you want to write the bootloader to SPI flash?\n\nIt is required if you have not done it before or if you have some non-Armbian bootloader in SPI." 8 60
+
+			if [[ $? -eq 0 ]]; then
+				MTD_BLK="/dev/${spicheck}"
+				show_warning "This script will update the bootloader on SPI Flash $MTD_BLK. Continue?"
+				write_uboot_platform_mtd "$DIR" $MTD_BLK
+				update_bootscript
+			fi
+		fi
 	fi
 
 	# recreate OMV mounts at destination if needed
